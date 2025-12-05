@@ -1,0 +1,2135 @@
+﻿{
+  "name": "Buildium Outstanding Balance Report_latest_workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "updates": [
+          "message"
+        ],
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        976,
+        320
+      ],
+      "id": "56873d75-df39-4879-92b4-b9db690ed129",
+      "name": "Telegram Trigger1",
+      "webhookId": "a04052f6-4cb2-4062-9f07-5594a992a91e",
+      "credentials": {
+        "telegramApi": {
+          "id": "YOUR_TELEGRAM_API_ID",
+          "name": "Telegram account 4"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.message.voice.file_id}}",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "string",
+                      "operation": "exists",
+                      "singleValue": true
+                    },
+                    "id": "b50987fb-1785-4fc2-880f-56a1ae630659"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Audio"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "6cf8a9ea-302c-4469-a832-52646d9e4987",
+                    "leftValue": "={{ $json.message.text || \"\"}}",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "string",
+                      "operation": "exists",
+                      "singleValue": true
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "text"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.3,
+      "position": [
+        1216,
+        336
+      ],
+      "id": "4d31b31d-7b51-4e3f-969c-d751c69578f5",
+      "name": "Switch1"
+    },
+    {
+      "parameters": {
+        "resource": "file",
+        "fileId": "={{ $json.message.voice.file_id }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1504,
+        208
+      ],
+      "id": "8ffaf63f-cd75-4a62-b661-e3d9f51e3b11",
+      "name": "Get a file1",
+      "webhookId": "be8dd212-fc7a-42f5-be8a-a1ba572c1a25",
+      "credentials": {
+        "telegramApi": {
+          "id": "YOUR_TELEGRAM_API_ID",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "audio",
+        "operation": "transcribe",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        1776,
+        208
+      ],
+      "id": "c1d77b7e-30a6-4742-8703-429c4970172e",
+      "name": "Transcribes Audio1",
+      "credentials": {
+        "openAiApi": {
+          "id": "YOUR_OPENAI_API_ID",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "c3ca9784-1074-4daa-9b33-b35259ebc5a6",
+              "name": "text",
+              "value": "={{ $json.message.text || \"\"}}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1488,
+        400
+      ],
+      "id": "214beab0-4810-4dc6-a1d2-f7fdbfc12f3e",
+      "name": "Text Message1"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "// Handle both Telegram and Schedule triggers\nconst input = $input.item.json;\n\n// Check if this is from Schedule Trigger (automated)\nif (input.source === \"scheduled_automation\" || input.isAutomated === true) {\n  return {\n    json: {\n      userQuery: input.userQuery || \"Generate outstanding balance report\",\n      source: \"scheduled_automation\",\n      timestamp: new Date().toISOString(),\n      isAutomated: true\n    }\n  };\n}\n\n// Handle Telegram voice/text (existing logic)\nconst voiceText = input.text;\nconst textMessage = input.text;\n\nreturn {\n  json: {\n    userQuery: voiceText || textMessage || \"\",\n    source: voiceText ? \"voice\" : \"text\",\n    timestamp: new Date().toISOString(),\n    isAutomated: false\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1952,
+        240
+      ],
+      "id": "bb22c93e-cf35-4785-a52d-196a981763b1",
+      "name": "Merge Input1"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.anthropic.com/v1/messages",
+        "authentication": "genericCredentialType",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "anthropic-version",
+              "value": "2023-06-01"
+            },
+            {
+              "name": "content-type",
+              "value": "application/json"
+            },
+            {
+              "name": "x-api-key",
+              "value": "YOUR_ANTHROPIC_API_KEY"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"claude-sonnet-4-20250514\",\n  \"max_tokens\": 2048,\n  \"system\": \"You are Iris, an AI assistant for Buildium property management. Your role is to understand user queries and determine which Buildium API endpoints are needed.\\n\\nAvailable Buildium API endpoints:\\n- Outstanding balances: GET /v1/leases/outstandingbalances?leasestatuses=Active\\n- Lease details: GET /v1/leases/{LeaseId}\\n- Property details: GET /v1/rentals/{PropertyId}\\n- Ledger transactions: GET /v1/leases/{LeaseId}/transactions\\n\\nFor queries about outstanding balances with tenant details, return:\\n{\\n  \\\"intent\\\": \\\"outstanding_balances_report\\\",\\n  \\\"requires_multiple_calls\\\": true,\\n  \\\"primary_endpoint\\\": \\\"/v1/leases/outstandingbalances\\\",\\n  \\\"primary_params\\\": {\\\"leasestatuses\\\": \\\"Active\\\"},\\n  \\\"data_needed\\\": [\\\"tenant_name\\\", \\\"property_address\\\", \\\"property_state\\\", \\\"balance_amount\\\", \\\"late_fees_since_6th\\\"]\\n}\\n\\nReturn ONLY valid JSON, no extra text.\",\n  \"messages\": [\n    {\n      \"role\": \"user\",\n      \"content\": \"{{ $json.userQuery }}\"\n    }\n  ]\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2416,
+        416
+      ],
+      "id": "3e919875-ab21-447d-aa66-874b803adb31",
+      "name": "Claude API - Interpret Query1",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "YOUR_HEADER_AUTH_ID",
+          "name": "Header Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "// Parse Claude's response and calculate last 6th of month\nlet claudeResponse = $input.item.json.content[0].text;\n// Remove Markdown code block markers if present\nclaudeResponse = claudeResponse.trim();\n// Remove ```json or ``` if present at the start/end\nclaudeResponse = claudeResponse.replace(/^```(?:json)?\\s*/i, '');\nclaudeResponse = claudeResponse.replace(/```$/, '');\n// Now try parsing\nconst instructions = JSON.parse(claudeResponse);\n\n// Calculate last 6th of month\nconst today = new Date();\nconst currentDay = today.getDate();\nconst currentMonth = today.getMonth();\nconst currentYear = today.getFullYear();\n\nlet lastSixth;\nif (currentDay >= 6) {\n  lastSixth = new Date(currentYear, currentMonth, 6);\n} else {\n  lastSixth = new Date(currentYear, currentMonth - 1, 6);\n}\n\nconst lastSixthFormatted = lastSixth.toISOString().split('T')[0];\n\nreturn {\n  json: {\n    intent: instructions.intent,\n    requiresMultipleCalls: instructions.requires_multiple_calls,\n    primaryEndpoint: instructions.primary_endpoint,\n    primaryParams: instructions.primary_params,\n    dataNeeded: instructions.data_needed,\n    lastSixthDate: lastSixthFormatted,\n    processedAt: new Date().toISOString()\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2672,
+        192
+      ],
+      "id": "3fb55d97-3bf6-46c9-82fb-884d94584c14",
+      "name": "Parse Claude Response1"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const lease = $input.item.json;\nconst lastSixthDate = $(\"Parse Claude Response1\").item.json.lastSixthDate;\n\nif (lease.TotalBalance > 0) {\n  return {\n    json: {\n      leaseId: lease.LeaseId,\n      propertyId: lease.PropertyId,\n      unitId: lease.UnitId,\n      totalBalance: lease.TotalBalance,\n      balance0To30Days: lease.Balance0To30Days,\n      balance31To60Days: lease.Balance31To60Days,\n      balance61To90Days: lease.Balance61To90Days,\n      balanceOver90Days: lease.BalanceOver90Days,\n      lastSixthDate: lastSixthDate\n    }\n  };\n} else {\n  return;\n}"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1216,
+        928
+      ],
+      "id": "cbaac416-c5df-4787-8401-63983be423a8",
+      "name": "Filter & Prepare Data1"
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "leaseId,propertyId,leaseId",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        1440,
+        928
+      ],
+      "id": "3555db92-6de2-4bde-8658-51d59c7dacaf",
+      "name": "Split Out1"
+    },
+    {
+      "parameters": {
+        "url": "=https://api.buildium.com/v1/leases/{{ $json.leaseId }}",
+        "authentication": "genericCredentialType",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-buildium-client-id",
+              "value": "YOUR_BUILDIUM_CLIENT_ID"
+            },
+            {
+              "name": "x-buildium-client-secret",
+              "value": "YOUR_BUILDIUM_CLIENT_SECRET"
+            },
+            {
+              "name": "Accept",
+              "value": "application/json"
+            }
+          ]
+        },
+        "options": {
+          "batching": {
+            "batch": {
+              "batchSize": 1
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1776,
+        752
+      ],
+      "id": "9fe2921c-273c-4527-bc80-a10b23366d03",
+      "name": "Get Lease Details1",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "YOUR_HEADER_AUTH_ID",
+          "name": "Header Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "=https://api.buildium.com/v1/rentals/{{ $json.propertyId }}",
+        "authentication": "genericCredentialType",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-buildium-client-id",
+              "value": "YOUR_BUILDIUM_CLIENT_ID"
+            },
+            {
+              "name": "x-buildium-client-secret",
+              "value": "YOUR_BUILDIUM_CLIENT_SECRET"
+            },
+            {
+              "name": "Accept",
+              "value": "application/json"
+            }
+          ]
+        },
+        "options": {
+          "batching": {
+            "batch": {
+              "batchSize": 1
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1776,
+        928
+      ],
+      "id": "4368ee49-77c5-4137-821d-3a6838b2c51e",
+      "name": "Get Property Details1",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "YOUR_HEADER_AUTH_ID",
+          "name": "Header Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "// Get the current item from Merge1 node\nconst mergedData = $input.item.json;\n\n// Get the corresponding original data from Split Out1 node by matching index\nconst allSplitData = $('Split Out1').all();\nconst currentIndex = $itemIndex;\nconst originalData = allSplitData[currentIndex]?.json || {};\n\n// Extract tenant names from CurrentTenants array\nconst tenantNames = (mergedData.CurrentTenants && mergedData.CurrentTenants.length > 0)\n  ? mergedData.CurrentTenants\n      .map(t => `${t.FirstName || ''} ${t.LastName || ''}`.trim())\n      .join(', ')\n  : 'N/A';\n\n// Extract property address from CurrentTenants Address\nlet propertyAddress = 'N/A';\nlet propertyState = 'N/A';\nif (mergedData.CurrentTenants && mergedData.CurrentTenants.length > 0 && mergedData.CurrentTenants[0].Address) {\n  const address = mergedData.CurrentTenants[0].Address;\n  propertyAddress = `${address.AddressLine1}, ${address.City}`;\n  propertyState = address.State;\n}\n\n// Calculate late fees from transaction data in merged record\nlet lateFees = 0;\nif (mergedData.TransactionType && mergedData.TotalAmount) {\n  const memo = mergedData.Journal && mergedData.Journal.Memo ? mergedData.Journal.Memo : '';\n  \n  if (mergedData.TransactionType === 'Charge' && mergedData.TotalAmount > 0) {\n    if (\n      memo.toLowerCase().includes('late') ||\n      memo.toLowerCase().includes('fee') ||\n      memo.toLowerCase().includes('penalty')\n    ) {\n      lateFees = mergedData.TotalAmount;\n    }\n  }\n}\n\n// Build final record - use mergedData for balance fields\nreturn {\n  json: {\n    tenantName: tenantNames,\n    propertyAddress: propertyAddress,\n    propertyState: propertyState,\n    currentBalance: mergedData.TotalBalance || 0,\n    balance0To30Days: mergedData.Balance0To30Days || 0,\n    balance31To60Days: mergedData.Balance31To60Days || 0,\n    balance61To90Days: mergedData.Balance61To90Days || 0,\n    balanceOver90Days: mergedData.BalanceOver90Days || 0,\n    lateFeesSinceLastSixth: lateFees,\n    leaseId: mergedData.LeaseId || mergedData.Id,\n    propertyId: mergedData.PropertyId,\n    unitId: mergedData.UnitId,\n    unitNumber: mergedData.UnitNumber,\n    leaseStatus: mergedData.LeaseStatus,\n    rent: mergedData.AccountDetails ? mergedData.AccountDetails.Rent : 0,\n    transactionDate: mergedData.Date || null,\n    transactionMemo: mergedData.Journal && mergedData.Journal.Memo ? mergedData.Journal.Memo : '',\n    lastSixthDate: originalData.lastSixthDate\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2544,
+        784
+      ],
+      "id": "136191db-0f59-4a3a-9e03-3b947c53ce60",
+      "name": "Merge All Data1"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get the data from the Prepare Rows for Insert node directly\nconst prepareRowsData = $node[\"Prepare Rows for Insert\"].json;\n\n// Validate we have the data\nif (!prepareRowsData || !prepareRowsData.values || prepareRowsData.values.length <= 1) {\n  return [{\n    json: {\n      report: 'âš ï¸ No tenant data available to generate report.',\n      summary: {\n        totalTenants: 0,\n        tenantsWithBalance: 0,\n        totalBalance: 0\n      },\n      details: []\n    }\n  }];\n}\n\n// Extract tenant data from the values array (skip header row)\nconst headers = prepareRowsData.values[0];\nconst dataRows = prepareRowsData.values.slice(1);\n\n// Convert rows back to tenant objects\nconst allData = dataRows.map(row => ({\n  tenantName: row[0],\n  propertyAddress: row[1],\n  propertyState: row[2],\n  currentBalance: parseFloat(row[3].replace('$', '')) || 0,\n  daysDelinquent: parseInt(row[4]) || 0,\n  priority: row[5]\n}));\n\n// Helper function to safely format currency\nconst formatCurrency = (value) => {\n  const num = parseFloat(value) || 0;\n  return num.toFixed(2);\n};\n\n// Calculate totals\nconst totalTenants = allData.length;\nconst tenantsWithBalance = allData.filter(t => t.currentBalance > 0).length;\nconst totalBalance = allData.reduce((sum, item) => sum + item.currentBalance, 0);\n\n// Count by priority (only for tenants with balance)\nconst priorityCounts = allData\n  .filter(t => t.currentBalance > 0)\n  .reduce((acc, tenant) => {\n    acc[tenant.priority] = (acc[tenant.priority] || 0) + 1;\n    return acc;\n  }, {});\n\n// Get current date info\nconst now = new Date();\nconst lastSixthDate = now.getDate() >= 6 \n  ? `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-06`\n  : `${now.getFullYear()}-${String(now.getMonth()).padStart(2, '0')}-06`;\n\n// Telegram message character limit\nconst TELEGRAM_LIMIT = 4000;\n\n// Format report header\nlet headerReport = `ðŸ“Š OUTSTANDING BALANCE REPORT\\n`;\nheaderReport += `Generated: ${now.toLocaleString('en-US', { timeZone: 'America/New_York' })}\\n`;\nheaderReport += `Last 6th: ${lastSixthDate}\\n\\n`;\nheaderReport += `â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”\\n\\n`;\nheaderReport += `ðŸ“ˆ SUMMARY:\\n`;\nheaderReport += `â€¢ Total Tenants: ${totalTenants}\\n`;\nheaderReport += `â€¢ Tenants with Outstanding Balance: ${tenantsWithBalance}\\n`;\nheaderReport += `â€¢ Total Outstanding: $${formatCurrency(totalBalance)}\\n`;\n\nif (tenantsWithBalance > 0) {\n  headerReport += `â€¢ Priority Breakdown:\\n`;\n  headerReport += `  - Urgent: ${priorityCounts.Urgent || 0}\\n`;\n  headerReport += `  - High: ${priorityCounts.High || 0}\\n`;\n  headerReport += `  - Normal: ${priorityCounts.Normal || 0}\\n`;\n}\n\nheaderReport += `\\nâ”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”\\n\\n`;\n\n// Create array of messages\nlet messages = [headerReport];\nlet currentMessage = '';\n\n// Only show tenants with balances in detail\nconst tenantsToShow = allData.filter(t => t.currentBalance > 0);\n\nif (tenantsToShow.length === 0) {\n  currentMessage = `âœ… All tenants are current with their payments!\\nNo outstanding balances to report.\\n`;\n  messages.push(currentMessage);\n} else {\n  // Group by state for organized display\n  const byState = {};\n  tenantsToShow.forEach(tenant => {\n    if (!byState[tenant.propertyState]) {\n      byState[tenant.propertyState] = [];\n    }\n    byState[tenant.propertyState].push(tenant);\n  });\n\n  // Add tenant details grouped by state\n  let stateCounter = 1;\n  Object.keys(byState).sort().forEach(state => {\n    let stateBlock = `\\nðŸ›ï¸ ${state} (${byState[state].length} tenant${byState[state].length > 1 ? 's' : ''})\\n${'â”€'.repeat(30)}\\n`;\n    \n    byState[state].forEach((tenant, index) => {\n      let tenantBlock = '';\n      tenantBlock += `${stateCounter}. ${tenant.tenantName}\\n`;\n      tenantBlock += `   ðŸ“ ${tenant.propertyAddress}\\n`;\n      tenantBlock += `   ðŸ’° Balance: $${formatCurrency(tenant.currentBalance)}\\n`;\n      tenantBlock += `   â° Days Delinquent: ${tenant.daysDelinquent}\\n`;\n      \n      if (tenant.priority === 'Urgent') {\n        tenantBlock += `   ðŸš¨ Priority: URGENT\\n`;\n      } else if (tenant.priority === 'High') {\n        tenantBlock += `   âš ï¸ Priority: HIGH\\n`;\n      }\n      \n      tenantBlock += `\\n`;\n      stateCounter++;\n      \n      // Check if adding this would exceed limit\n      if ((currentMessage + stateBlock + tenantBlock).length > TELEGRAM_LIMIT) {\n        messages.push(currentMessage);\n        currentMessage = stateBlock + tenantBlock;\n        stateBlock = '';\n      } else {\n        if (stateBlock) {\n          currentMessage += stateBlock;\n          stateBlock = '';\n        }\n        currentMessage += tenantBlock;\n      }\n    });\n  });\n}\n\n// Add remaining message\nif (currentMessage.length > 0) {\n  messages.push(currentMessage);\n}\n\n// Add footer to last message\nmessages[messages.length - 1] += `\\nâ”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”\\n`;\nmessages[messages.length - 1] += `End of Report (${messages.length} page${messages.length > 1 ? 's' : ''})\\n`;\n\n// Add page numbers (except header)\nfor (let i = 1; i < messages.length; i++) {\n  messages[i] = `ðŸ“„ Page ${i} of ${messages.length - 1}\\n\\n` + messages[i];\n}\n\n// Get spreadsheet ID from Move to Folder node\nconst spreadsheetId = $node[\"Move to Folder\"].json.spreadsheetId || $node[\"Create Spread Sheet\"].json.spreadsheetId;\n\nreturn [{\n  json: {\n    messages: messages,\n    messageCount: messages.length,\n    fullReport: messages.join('\\n\\n'),\n    summary: {\n      totalTenants: totalTenants,\n      tenantsWithBalance: tenantsWithBalance,\n      totalBalance: parseFloat(formatCurrency(totalBalance)),\n      generatedAt: now.toISOString(),\n      lastSixthDate: lastSixthDate,\n      priorityBreakdown: priorityCounts\n    },\n    details: tenantsToShow,\n    spreadsheetId: spreadsheetId\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3472,
+        720
+      ],
+      "id": "f265c64a-d27f-414d-9399-acc89a25bec0",
+      "name": "Format Report1"
+    },
+    {
+      "parameters": {
+        "url": "=https://api.buildium.com/v1/leases/outstandingbalances",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBasicAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "leasestatuses",
+              "value": "Active"
+            },
+            {
+              "name": "limit",
+              "value": "100"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-buildium-client-id",
+              "value": "YOUR_BUILDIUM_CLIENT_ID"
+            },
+            {
+              "name": "x-buildium-client-secret",
+              "value": "YOUR_BUILDIUM_CLIENT_SECRET"
+            },
+            {
+              "name": "Accept",
+              "value": "application/json"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1376,
+        752
+      ],
+      "id": "469b7739-79e1-4315-ab31-7d0f763066b8",
+      "name": "Get Query Results1",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "YOUR_BUILDIUM_AUTH_ID",
+          "name": "Buildium API"
+        },
+        "httpBasicAuth": {
+          "id": "YOUR_BUILDIUM_AUTH_ID",
+          "name": "Buildium credential"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "advanced": true,
+        "mergeByFields": {
+          "values": [
+            {
+              "field1": "PropertyId",
+              "field2": "Id"
+            }
+          ]
+        },
+        "outputDataFrom": "input1",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        2240,
+        768
+      ],
+      "id": "56341158-4dd5-4ed6-bd46-ae8f542ad111",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "advanced": true,
+        "mergeByFields": {
+          "values": [
+            {
+              "field1": "Id",
+              "field2": "LeaseId"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        2384,
+        960
+      ],
+      "id": "156eeafb-de74-46e3-b7a8-20018a302b1d",
+      "name": "Merge1"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get all merged data items\nconst items = $input.all();\n\n// Group data by leaseId and aggregate late fees\nconst groupedData = {};\n\nitems.forEach(item => {\n  const data = item.json;\n  const leaseId = data.leaseId;\n  \n  if (!leaseId) return; // Skip if no leaseId\n  \n  if (!groupedData[leaseId]) {\n    // First occurrence of this lease - create the base record\n    groupedData[leaseId] = {\n      tenantName: data.tenantName,\n      propertyAddress: data.propertyAddress,\n      propertyState: data.propertyState,\n      unitNumber: data.unitNumber,\n      leaseId: data.leaseId,\n      propertyId: data.propertyId,\n      unitId: data.unitId,\n      leaseStatus: data.leaseStatus,\n      rent: data.rent || 0,\n      currentBalance: data.currentBalance || 0,\n      balance0To30Days: data.balance0To30Days || 0,\n      balance31To60Days: data.balance31To60Days || 0,\n      balance61To90Days: data.balance61To90Days || 0,\n      balanceOver90Days: data.balanceOver90Days || 0,\n      lateFeesSinceLastSixth: 0, // Will accumulate\n      transactionDates: [],\n      transactionMemos: [],\n      lastSixthDate: data.lastSixthDate\n    };\n  }\n  \n  // Accumulate late fees from all transactions for this lease\n  const lateFee = parseFloat(data.lateFeesSinceLastSixth) || 0;\n  if (lateFee > 0) {\n    groupedData[leaseId].lateFeesSinceLastSixth += lateFee;\n    \n    // Track transaction details\n    if (data.transactionDate) {\n      groupedData[leaseId].transactionDates.push(data.transactionDate);\n    }\n    if (data.transactionMemo) {\n      groupedData[leaseId].transactionMemos.push(data.transactionMemo);\n    }\n  }\n  \n  // Update balance amounts (take the maximum or most recent)\n  // This ensures we get the current balance, not duplicate it\n  groupedData[leaseId].currentBalance = Math.max(\n    groupedData[leaseId].currentBalance,\n    data.currentBalance || 0\n  );\n});\n\n// Convert grouped object back to array and round late fees\nconst result = Object.values(groupedData).map(tenant => ({\n  ...tenant,\n  lateFeesSinceLastSixth: Math.round(tenant.lateFeesSinceLastSixth * 100) / 100,\n  transactionCount: tenant.transactionDates.length,\n  // Format transaction details as readable string\n  transactionDetails: tenant.transactionDates.length > 0 \n    ? `${tenant.transactionDates.length} transaction(s): ${tenant.transactionMemos.join(', ')}` \n    : 'No late fee transactions'\n}));\n\n// Return array of items (one per unique tenant/lease)\nreturn result.map(tenant => ({ json: tenant }));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2752,
+        1008
+      ],
+      "id": "626871c0-aedd-4e04-9803-72b6d428cd41",
+      "name": "Group by tenant"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Calculate days delinquent based on balance aging and priority\nconst items = $input.all();\n\nconst result = items.map(item => {\n  const data = item.json;\n  \n  let daysDelinquent = 0;\n  let priority = 'Normal';\n  \n  // Calculate days delinquent from balance aging buckets\n  // The oldest unpaid balance determines delinquency\n  if (data.balanceOver90Days > 0) {\n    daysDelinquent = 120;\n  } else if (data.balance61To90Days > 0) {\n    daysDelinquent = 75;\n  } else if (data.balance31To60Days > 0) {\n    daysDelinquent = 45;\n  } else if (data.balance0To30Days > 0) {\n    daysDelinquent = 15;\n  }\n  \n  // Assign priority based on days delinquent\n  // 6-15 days: Normal, 16-30 days: High, 31+ days: Urgent\n  if (daysDelinquent >= 31) {\n    priority = 'Urgent';\n  } else if (daysDelinquent >= 16 && daysDelinquent <= 30) {\n    priority = 'High';\n  } else if (daysDelinquent >= 6 && daysDelinquent <= 15) {\n    priority = 'Normal';\n  } else if (daysDelinquent > 0 && daysDelinquent < 6) {\n    priority = 'Current';\n  }\n  \n  return {\n    json: {\n      ...data,\n      daysDelinquent: daysDelinquent,\n      priority: priority\n    }\n  };\n});\n\nreturn result;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2992,
+        960
+      ],
+      "id": "bb0387f6-8da7-4b6a-8dd5-0cadf6f0dd65",
+      "name": "Calculate Days Delinquent"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Format data for Google Sheets with proper currency formatting\nconst items = $input.all();\n\n// Helper function to format currency\nconst formatCurrency = (value) => {\n  const num = parseFloat(value) || 0;\n  return `$${num.toFixed(2)}`;\n};\n\nconst formattedData = items\n  .filter(item => {\n    // Filter OUT rows where tenantName is 'N/A' or propertyAddress is 'N/A'\n    const data = item.json;\n    return data.tenantName !== 'N/A' && data.propertyAddress !== 'N/A';\n  })\n  .map((item, index) => {\n    const data = item.json;\n    \n    return {\n      json: {\n        row: index + 1,\n        tenantName: data.tenantName || 'N/A',\n        propertyAddress: data.propertyAddress || 'N/A',\n        propertyState: data.propertyState || 'N/A',\n        unitNumber: data.unitNumber || 'N/A',\n        monthlyRent: formatCurrency(data.rent),\n        currentBalance: formatCurrency(data.currentBalance),\n        balance0To30: formatCurrency(data.balance0To30Days),\n        balance31To60: formatCurrency(data.balance31To60Days),\n        balance61To90: formatCurrency(data.balance61To90Days),\n        balanceOver90: formatCurrency(data.balanceOver90Days),\n        lateFees: formatCurrency(data.lateFeesSinceLastSixth),\n        daysDelinquent: data.daysDelinquent || 0,\n        priority: data.priority || 'Low',\n        transactionCount: data.transactionCount || 0,\n        leaseStatus: data.leaseStatus || 'Unknown',\n        leaseId: data.leaseId,\n        propertyId: data.propertyId,\n        reportDate: new Date().toISOString().split('T')[0],\n        lastSixthDate: data.lastSixthDate || 'N/A',\n        currentBalanceRaw: parseFloat(data.currentBalance) || 0,\n        lateFeesRaw: parseFloat(data.lateFeesSinceLastSixth) || 0\n      }\n    };\n  });\n\nreturn formattedData;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2928,
+        400
+      ],
+      "id": "43761c7f-949f-4ca7-b79f-fbf85b32b2a3",
+      "name": "Format For google Sheet Node"
+    },
+    {
+      "parameters": {
+        "sortFieldsUi": {
+          "sortField": [
+            {
+              "fieldName": "propertyState"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.sort",
+      "typeVersion": 1,
+      "position": [
+        3136,
+        720
+      ],
+      "id": "c5b39163-a9ff-4b6e-8448-19578953ae1e",
+      "name": "Sort By State"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Generate filename with current timestamp\nconst now = new Date();\n\n// Format date as MM-DD-YYYY\nconst month = String(now.getMonth() + 1).padStart(2, '0');\nconst day = String(now.getDate()).padStart(2, '0');\nconst year = now.getFullYear();\n\n// Format time as HH-MM (24-hour format)\nconst hours = String(now.getHours()).padStart(2, '0');\nconst minutes = String(now.getMinutes()).padStart(2, '0');\n\nconst fileName = `Outstanding Balances - ${month}-${day}-${year} ${hours}-${minutes}`;\n\n// Pass through all items but add fileName to each\nconst items = $input.all();\n\nreturn items.map(item => ({\n  json: {\n    ...item.json,\n    spreadsheetName: fileName,\n    folderId: 'YOUR_GOOGLE_DRIVE_FOLDER_ID' // Your folder ID\n  }\n}));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3216,
+        384
+      ],
+      "id": "f2776227-ed20-450d-b568-9fbab8a25e6c",
+      "name": "Create Spreadsheet Name"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Aggregate all tenant data into single item for sheet creation\nconst items = $input.all();\n\n// Generate filename\nconst now = new Date();\nconst month = String(now.getMonth() + 1).padStart(2, '0');\nconst day = String(now.getDate()).padStart(2, '0');\nconst year = now.getFullYear();\nconst hours = String(now.getHours()).padStart(2, '0');\nconst minutes = String(now.getMinutes()).padStart(2, '0');\n\nconst fileName = `Outstanding Balances - ${month}-${day}-${year} ${hours}-${minutes}`;\n\n// Prepare all rows for the sheet\nconst allRows = items.map(item => {\n  const data = item.json;\n  return {\n    'Tenant Name': data.tenantName || 'N/A',\n    'Property Address': data.propertyAddress || 'N/A',\n    'State': data.propertyState || 'N/A',\n    'Outstanding Balance': data.currentBalance || '$0.00',\n    'Days Delinquent': data.daysDelinquent || 0,\n    'Priority': data.priority || 'Normal'  // ADD THIS LINE\n  };\n});\n\n// Return SINGLE item with all data\nreturn [{\n  json: {\n    spreadsheetName: fileName,\n    folderId: 'YOUR_GOOGLE_DRIVE_FOLDER_ID',\n    allTenantData: allRows,\n    rowCount: allRows.length\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3072,
+        224
+      ],
+      "id": "30bb85d2-225c-4abd-9146-285b45702fc8",
+      "name": "Aggregate for All Tenants Data"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get the spreadsheet ID from previous step\nconst spreadsheetId = $node[\"Create Spread Sheet\"].json.spreadsheetId;\n\n// Get aggregated data\nconst allData = $node[\"Aggregate for All Tenants Data\"].json.allTenantData;\n\n// Prepare rows with headers\nconst headers = ['Tenant Name', 'Property Address', 'State', 'Outstanding Balance', 'Days Delinquent', 'Priority'];\n\nconst dataRows = allData.map(row => [\n  row['Tenant Name'] || '',\n  row['Property Address'] || '',\n  row['State'] || '',\n  row['Outstanding Balance'] || '',\n  String(row['Days Delinquent'] || 0),\n  row['Priority'] || 'Normal'\n]);\n\n// Combine headers and data\nconst allRows = [headers, ...dataRows];\n\nreturn [{\n  json: {\n    spreadsheetId: spreadsheetId,\n    sheetName: 'Sheet1',\n    values: allRows\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3936,
+        384
+      ],
+      "id": "d9b260b2-8845-4754-8b9c-88c6cacd4d08",
+      "name": "Prepare Rows for Insert"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://sheets.googleapis.com/v4/spreadsheets/{{ $json.spreadsheetId }}/values:batchUpdate",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "oAuth2Api",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"valueInputOption\": \"USER_ENTERED\",\n  \"data\": [{\n    \"range\": \"Sheet1!A1\",\n    \"values\": {{ JSON.stringify($json.values) }}\n  }]\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        4080,
+        224
+      ],
+      "id": "66ed22fc-8c31-4599-9fad-0814b59d5dfa",
+      "name": "Update Rows of Sheet",
+      "credentials": {
+        "oAuth2Api": {
+          "id": "YOUR_GOOGLE_OAUTH_ID",
+          "name": "Authentication_token"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "=https://www.googleapis.com/drive/v3/files/{{ $json.spreadsheetId }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "oAuth2Api",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "addParents",
+              "value": "YOUR_GOOGLE_DRIVE_FOLDER_ID"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        4288,
+        352
+      ],
+      "id": "ca0b3c20-951c-42b7-b50a-af9f045426cd",
+      "name": "Move to Folder",
+      "credentials": {
+        "oAuth2Api": {
+          "id": "YOUR_GOOGLE_OAUTH_ID",
+          "name": "Authentication_token"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://sheets.googleapis.com/v4/spreadsheets",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "oAuth2Api",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"properties\": {\n    \"title\": \"{{ $json.spreadsheetName }}\"\n  },\n  \"sheets\": [{\n    \"properties\": {\n      \"title\": \"Sheet1\"\n    }\n  }]\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        3392,
+        224
+      ],
+      "id": "0fa59b4a-4a2c-46d9-8142-e4be55055274",
+      "name": "Create Spread Sheet",
+      "credentials": {
+        "oAuth2Api": {
+          "id": "YOUR_GOOGLE_OAUTH_ID",
+          "name": "Authentication_token"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get all necessary data\nconst reportData = $node[\"Format Report1\"].json;\nconst tenantsWithBalance = reportData.summary.tenantsWithBalance;\nconst totalBalance = reportData.summary.totalBalance;\nconst priorityBreakdown = reportData.summary.priorityBreakdown || {};\n\n// Build priority text\nconst priorityText = Object.entries(priorityBreakdown).length > 0\n  ? Object.entries(priorityBreakdown)\n      .map(([priority, count]) => `${priority}: ${count} tenant(s)`)\n      .join(', ')\n  : 'No tenants with outstanding balances';\n\n// Get spreadsheet ID\nconst spreadsheetId = $node[\"Create Spread Sheet\"].json.spreadsheetId;\n\n// Build Google Sheets link\nconst sheetLink = spreadsheetId \n  ? `https://docs.google.com/spreadsheets/d/${spreadsheetId}/edit`\n  : 'Spreadsheet link unavailable';\n\n// Generate current date for task name\nconst today = new Date();\nconst dateStr = today.toLocaleDateString('en-US', { \n  month: 'long', \n  day: 'numeric', \n  year: 'numeric' \n});\n\n// Build description\nconst description = `Outstanding balance report generated by Iris.\n\nTotal Outstanding: ${tenantsWithBalance} tenants owing $${totalBalance.toFixed(2)}\n\nPriority breakdown: ${priorityText}\n\nðŸ“Š SPREADSHEET LINK:\n${sheetLink}\n\nGenerated: ${new Date().toLocaleString('en-US', { timeZone: 'America/New_York' })}`;\n\nconst taskName = `Outstanding Balances Review - ${dateStr}`;\n\n// Build column_values object with both columns\nconst columnValuesObj = {\n  person: {\n    personsAndTeams: [\n      {\n        id: YOUR_MONDAY_PERSON_ID,\n        kind: \"person\"\n      }\n    ]\n  },\n  long_text_mkwmpfpy: {  // Description column (Long Text type)\n    text: description\n  },\n  text_mkwmnvzm: sheetLink  // Google Sheets Link column (Text type - just the string)\n};\n\n// Convert to JSON string and properly escape for GraphQL\nconst columnValuesJSON = JSON.stringify(columnValuesObj);\nconst escapedColumnValues = columnValuesJSON\n  .replace(/\\\\/g, '\\\\\\\\')\n  .replace(/\"/g, '\\\\\"');\n\n// Build the GraphQL query with properly escaped column_values\nconst query = `mutation {\n  create_item (\n    board_id: YOUR_MONDAY_BOARD_ID,\n    group_id: \"topics\",\n    item_name: \"${taskName.replace(/\"/g, '\\\\\"')}\",\n    column_values: \"${escapedColumnValues}\"\n  ) {\n    id\n    name\n  }\n}`;\n\nreturn [{\n  json: {\n    query: query,\n    spreadsheetId: spreadsheetId,\n    sheetLink: sheetLink,\n    columnValuesJSON: columnValuesJSON\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3680,
+        720
+      ],
+      "id": "a1ba5aa8-bbd7-4968-97f0-675806c973f5",
+      "name": "Prepare Monday.com Task Data"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.monday.com/v2",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "YOUR_MONDAY_COM_API_TOKEN"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ query: $json.query }) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        3920,
+        720
+      ],
+      "id": "96891bf0-3ef0-4c1d-adf1-023da10c9496",
+      "name": "HTTP Request",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "YOUR_HEADER_AUTH_ID",
+          "name": "Header Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "Input Nodes",
+        "height": 416,
+        "width": 720
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        912,
+        144
+      ],
+      "id": "c5434247-8ce8-46c4-a938-404939fd8913",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "content": "Input Processing and Query Processing Nodes",
+        "height": 384,
+        "width": 1104,
+        "color": 3
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        1728,
+        176
+      ],
+      "typeVersion": 1,
+      "id": "c5e9be16-cb04-43c0-a482-5c24a544e381",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "content": "Data Preparation and Fetching Data Using APIs",
+        "height": 656,
+        "width": 784,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        1168,
+        672
+      ],
+      "typeVersion": 1,
+      "id": "9e393b78-c5d6-4f8e-b9d9-05a5a04b92fc",
+      "name": "Sticky Note2"
+    },
+    {
+      "parameters": {
+        "content": "Merging, Grouping and Sorting Data",
+        "height": 656,
+        "width": 1104,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        2160,
+        672
+      ],
+      "typeVersion": 1,
+      "id": "6fceb70a-4f67-451c-87e7-f05cc5597f4f",
+      "name": "Sticky Note3"
+    },
+    {
+      "parameters": {
+        "content": "Data Preprocessing for Google Sheet and creation of google Sheets",
+        "height": 384,
+        "width": 1744
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        2880,
+        176
+      ],
+      "typeVersion": 1,
+      "id": "cb66e5f8-3a92-4214-ab23-ad701be8365b",
+      "name": "Sticky Note4"
+    },
+    {
+      "parameters": {
+        "content": "Report Formation and Monday.com Task Creation",
+        "height": 256,
+        "width": 1136,
+        "color": 6
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        3392,
+        656
+      ],
+      "typeVersion": 1,
+      "id": "3276ff11-4511-4b17-915d-547738f67e62",
+      "name": "Sticky Note5"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.shouldRespond }}",
+                    "rightValue": "true",
+                    "operator": {
+                      "type": "boolean",
+                      "operation": "true",
+                      "singleValue": true
+                    },
+                    "id": "fce37408-db2b-49d3-9e3d-f3050e019bea"
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "2555406f-9151-4d2e-bc0c-d50917df4c0b",
+                    "leftValue": "={{ $json.shouldRespond }}",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "boolean",
+                      "operation": "false",
+                      "singleValue": true
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.3,
+      "position": [
+        3680,
+        1056
+      ],
+      "id": "679773b0-fb08-4136-bb34-9bc6c0216f5c",
+      "name": "Switch"
+    },
+    {
+      "parameters": {
+        "operation": "sendAudio",
+        "chatId": "={{ $('Telegram Trigger1').first().json.message.chat.id }}",
+        "binaryData": true,
+        "binaryPropertyName": "=data",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        4192,
+        1168
+      ],
+      "id": "3cf294e1-87a7-4719-a1ff-6b97bd05529e",
+      "name": "Send an audio file",
+      "webhookId": "bf00219c-a27b-4f6a-a2ea-8f1dc5421808",
+      "credentials": {
+        "telegramApi": {
+          "id": "YOUR_TELEGRAM_API_ID",
+          "name": "Telegram account 4"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get all necessary data\nconst reportData = $node[\"Format Report1\"].json;\nconst summary = reportData.summary;\n\n// Get spreadsheetId from \"Create Spread Sheet\" - it's always there\nconst spreadsheetId = $node[\"Create Spread Sheet\"].json.spreadsheetId;\n\n// Construct the sheet link - this format ALWAYS works\nconst sheetLink = spreadsheetId \n  ? `https://docs.google.com/spreadsheets/d/${spreadsheetId}/edit`\n  : 'Spreadsheet link unavailable';\n\nconst mergeInputData = $node[\"Merge Input1\"].json;\nconst isAutomated = mergeInputData.isAutomated === true;\n\nif (isAutomated) {\n  return [{ json: { shouldRespond: false } }];\n} else {\n  const triggerData = $node[\"Telegram Trigger1\"].json;\n  const details = reportData.details || [];\n  const states = [...new Set(details.map(t => t.propertyState))];\n  const stateCount = states.length;\n  \n  // ESCAPE underscores for Telegram by adding backslash before each underscore\n  const escapedSheetLink = sheetLink.replace(/_/g, '\\\\_');\n  \n  const responseMessage = `ðŸ“Š Outstanding Balance Report Generated\\n\\nFound ${summary.tenantsWithBalance} tenants across ${stateCount} state${stateCount !== 1 ? 's' : ''} owing $${summary.totalBalance.toFixed(2)}.\\n\\nðŸ“‹ Summary:\\n- Total Outstanding: $${summary.totalBalance.toFixed(2)}\\n- Tenants Affected: ${summary.tenantsWithBalance}\\n- States: ${stateCount}\\n\\nðŸ“Š View Spreadsheet:\\n${escapedSheetLink}\\n\\nâœ… Report created and task assigned to Carlos for follow-up.`;\n  \n  return [{\n    json: {\n      shouldRespond: true,\n      responseMessage: responseMessage,\n      chatId: triggerData.message.chat.id,\n      spreadsheetId: spreadsheetId,\n      sheetLink: sheetLink  // Keep unescaped for Monday.com\n    }\n  }];\n}"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3504,
+        1056
+      ],
+      "id": "1c2fb205-1ca2-44ff-a4ea-da166761bebc",
+      "name": "Prepare Response"
+    },
+    {
+      "parameters": {
+        "content": "Telegram Response",
+        "height": 368,
+        "width": 1024,
+        "color": 7
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        3392,
+        944
+      ],
+      "typeVersion": 1,
+      "id": "fa7032ec-c957-4c2e-9522-f351e984e995",
+      "name": "Sticky Note6"
+    },
+    {
+      "parameters": {
+        "resource": "audio",
+        "input": "={{ $json.responseMessage }}",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        4192,
+        960
+      ],
+      "id": "24742ab1-fa78-49d8-bd95-58336d68e9e9",
+      "name": "Generate audio",
+      "credentials": {
+        "openAiApi": {
+          "id": "YOUR_OPENAI_API_ID",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.openai.com/v1/chat/completions",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer YOUR_OPENAI_API_KEY"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"gpt-4o-mini\",\n  \"messages\": [\n    {\n      \"role\": \"system\",\n      \"content\": \"You are a query classifier for a property management system. Analyze the user's query and determine if it's related to property management operations.\\n\\nProperty-related queries include: outstanding balances, tenant information, lease details, property reports, payment status, rent collection, late fees, delinquent tenants, financial reports.\\n\\nRespond with ONLY a JSON object in this exact format:\\n{\\n  \\\"is_property_related\\\": true or false,\\n  \\\"confidence\\\": 0.0-1.0,\\n  \\\"query_type\\\": \\\"property_management\\\" or \\\"general\\\",\\n  \\\"suggested_response\\\": \\\"Brief response for general queries (empty if property-related)\\\"\\n}\"\n    },\n    {\n      \"role\": \"user\",\n      \"content\": \"={{ $json.userQuery }}\"\n    }\n  ],\n  \"temperature\": 0.3\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2064,
+        400
+      ],
+      "id": "1a466c9f-ac6f-46b0-b8fe-a0a5fba47dda",
+      "name": "OpenAI Query Classifier",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "YOUR_HEADER_AUTH_ID",
+          "name": "Header Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.isPropertyRelated.toString() }}",
+                    "rightValue": "true",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "34b4509b-2634-40ff-bf85-0206d59cc791"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Property Query"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "5bb48217-9903-49df-bc7a-ad2bfbb32c6f",
+                    "leftValue": "={{ $json.isPropertyRelated.toString() }}",
+                    "rightValue": "=false",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "General Query"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.3,
+      "position": [
+        2384,
+        192
+      ],
+      "id": "7ab943cb-5503-45ae-8321-f6d949235a58",
+      "name": "Switch2"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.openai.com/v1/chat/completions",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer YOUR_OPENAI_API_KEY"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"gpt-4o-mini\",\n  \"messages\": [\n    {\n      \"role\": \"system\",\n      \"content\": \"You are Iris, a friendly AI assistant for property management. You help with general questions about property management, but you specialize in financial reports and tenant information. Be helpful, professional, and concise. If the query is completely unrelated to property management, politely redirect the conversation.\"\n    },\n    {\n      \"role\": \"user\",\n      \"content\": \"{{ $json.userQuery }}\"\n    }\n  ],\n  \"temperature\": 0.7,\n  \"max_tokens\": 500\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2896,
+        -128
+      ],
+      "id": "7d7bd4d8-b974-423a-a4bf-c253d0eec650",
+      "name": "Generate Detailed Response",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "YOUR_HEADER_AUTH_ID",
+          "name": "Header Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const openAIResponse = $input.item.json;\nconst triggerData = $node[\"Telegram Trigger1\"].json;\n\n// Extract response text\nconst responseText = openAIResponse.choices[0].message.content;\n\nreturn [{\n  json: {\n    chatId: triggerData.message.chat.id,\n    responseText: responseText,\n    isGeneralQuery: true\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3152,
+        -128
+      ],
+      "id": "aa51187c-5133-458c-a229-8229ba910797",
+      "name": "Extract Response Text"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.chatId }}",
+        "text": "={{ $json.responseText }}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        3344,
+        -128
+      ],
+      "id": "2cd11f2d-cb8e-493a-91e0-22c970acfed2",
+      "name": "Send General Response",
+      "webhookId": "a39b6453-776b-436f-93d9-58ad358f9019",
+      "credentials": {
+        "telegramApi": {
+          "id": "YOUR_TELEGRAM_API_ID",
+          "name": "Telegram account 4"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Parse OpenAI's response\nconst openAIResponse = $input.item.json;\nlet classification;\n\ntry {\n  // Extract the content from OpenAI response\n  const content = openAIResponse.choices[0].message.content;\n  \n  // Remove markdown code blocks if present\n  const cleanContent = content.replace(/```json\\n?/g, '').replace(/```\\n?/g, '').trim();\n  \n  // Parse JSON\n  classification = JSON.parse(cleanContent);\n} catch (error) {\n  // Fallback if parsing fails\n  classification = {\n    is_property_related: false,\n    confidence: 0.5,\n    query_type: \"general\",\n    suggested_response: \"I'm having trouble understanding your query. Could you please rephrase it?\"\n  };\n}\n\n// Get original query from Merge Input1 (which is always executed)\nconst mergeInputData = $node[\"Merge Input1\"].json;\nconst userQuery = mergeInputData.userQuery;\nconst isAutomated = mergeInputData.isAutomated === true;\n\n// Get chatId - handle both automated and manual triggers\nlet chatId = null;\nif (!isAutomated) {\n  // Try to get Telegram trigger data (only for manual triggers)\n  try {\n    const telegramData = $node[\"Telegram Trigger1\"].json;\n    chatId = telegramData.message.chat.id;\n  } catch (e) {\n    // If Telegram Trigger hasn't executed, chatId remains null\n    chatId = null;\n  }\n}\n\nreturn [{\n  json: {\n    isPropertyRelated: classification.is_property_related,\n    confidence: classification.confidence,\n    queryType: classification.query_type,\n    suggestedResponse: classification.suggested_response || \"\",\n    userQuery: userQuery,\n    chatId: chatId,\n    isAutomated: isAutomated,\n    originalClassification: classification\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2208,
+        192
+      ],
+      "id": "218c1651-2a4f-455b-bf56-62de36e13305",
+      "name": "Parse OpenAI Classification"
+    },
+    {
+      "parameters": {
+        "content": "General Query Flow",
+        "height": 320,
+        "width": 944,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        2576,
+        -208
+      ],
+      "typeVersion": 1,
+      "id": "70ebf4b0-3c5b-4c59-b262-63aaa16dc5d0",
+      "name": "Sticky Note7"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get the classification data\nconst classificationData = $input.item.json;\n\n// If this is an automated run, skip general query handling\n// (automated runs should always be property-related)\nif (classificationData.isAutomated === true) {\n  return []; // Return empty - shouldn't reach here for automated runs\n}\n\n// If OpenAI already provided a response, use it\nif (classificationData.suggestedResponse && classificationData.suggestedResponse.trim() !== \"\") {\n  return [{\n    json: {\n      chatId: classificationData.chatId,\n      responseText: classificationData.suggestedResponse,\n      isGeneralQuery: true\n    }\n  }];\n}\n\n// Otherwise, provide a default helpful response\nconst defaultResponse = `Hello! I'm Iris, your property management assistant. \n\nI specialize in helping with:\n- Outstanding balance reports\n- Tenant information\n- Lease details\n- Payment status tracking\n- Property financial reports\n\nHow can I help you with property management today?`;\n\nreturn [{\n  json: {\n    chatId: classificationData.chatId,\n    responseText: defaultResponse,\n    isGeneralQuery: true\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2688,
+        -128
+      ],
+      "id": "eea0cfd8-2093-43d0-acca-65aaeee609b1",
+      "name": "Handle General Query with OpenAI"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.chatId }}",
+        "text": "={{ $json.responseMessage }}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        3872,
+        976
+      ],
+      "id": "a389e178-f760-4239-b135-4abe93c42522",
+      "name": "Send a text message",
+      "webhookId": "1f5016c9-da8b-46ee-9df4-58c5a43c81e3",
+      "credentials": {
+        "telegramApi": {
+          "id": "YOUR_TELEGRAM_API_ID",
+          "name": "Telegram account 4"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 9 6 * *"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        1712,
+        -16
+      ],
+      "id": "11073f46-35b0-44d0-893b-4ca307b89048",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Create a formatted input that mimics the expected structure\nreturn [{\n  json: {\n    userQuery: \"Generate outstanding balance report for active leases\",\n    source: \"scheduled_automation\",\n    timestamp: new Date().toISOString(),\n    isAutomated: true,\n    message: {\n      chat: {\n        id: null // No Telegram chat for automated runs\n      }\n    }\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1920,
+        -16
+      ],
+      "id": "7af7e3cc-6b14-48ad-a0a4-2f712599d14a",
+      "name": "Format Schedule Input"
+    },
+    {
+      "parameters": {
+        "chatId": "=YOUR_TELEGRAM_CHAT_ID",
+        "text": "={{ $('Format Report1').item.json.messages[0] }}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        3888,
+        1168
+      ],
+      "id": "a72f25d6-0e82-4efc-87a9-cb2dfefc5ebc",
+      "name": "Send a text message1",
+      "webhookId": "2f2af4f3-4711-4f3e-87a7-266c903a5308",
+      "credentials": {
+        "telegramApi": {
+          "id": "YOUR_TELEGRAM_API_ID",
+          "name": "Telegram account 4"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "Schedule Trigger",
+        "height": 208,
+        "width": 416
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        1664,
+        -80
+      ],
+      "typeVersion": 1,
+      "id": "6372d837-5823-4155-89b5-6ab23e245437",
+      "name": "Sticky Note9"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://www.googleapis.com/drive/v3/files/{{ $json.spreadsheetId }}/permissions?supportsAllDrives=true",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "oAuth2Api",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\n    \"role\": \"writer\",\n     \"type\": \"anyone\"\n   }",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        3600,
+        224
+      ],
+      "id": "75a3e2d8-e0c3-4c88-84bc-ed7aa4e96401",
+      "name": "Share File",
+      "credentials": {
+        "oAuth2Api": {
+          "id": "YOUR_GOOGLE_OAUTH_ID",
+          "name": "Authentication_token"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "amount": 4
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        4464,
+        352
+      ],
+      "id": "f36c58b6-0f2f-46c6-adec-449af79edec1",
+      "name": "Wait",
+      "webhookId": "c57ae2a8-e9a7-4122-a723-75b9e0d65e5a"
+    },
+    {
+      "parameters": {
+        "amount": 15
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        3792,
+        224
+      ],
+      "id": "e1049f47-6783-4f6d-aa0f-f70249878af0",
+      "name": "Wait1",
+      "webhookId": "5b4a0016-32d3-41c6-82b0-037c9c9f62d4"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.chatId }}",
+        "text": "â³ Generating your answer...  This might take a few seconds as I fetch data from different sources, analyze it, and perform different operation.  Please wait...",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        2384,
+        -32
+      ],
+      "id": "dd03e3ff-7233-41b4-90cb-ccd890b61dab",
+      "name": "Send Loading Message",
+      "webhookId": "39fa0e98-7051-4abc-a8e3-c90d78cfff9e",
+      "credentials": {
+        "telegramApi": {
+          "id": "YOUR_TELEGRAM_API_ID",
+          "name": "Telegram account 4"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.monday.com/v2",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "YOUR_MONDAY_COM_API_TOKEN"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ query: $json.query }) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        4336,
+        720
+      ],
+      "id": "1e16d771-1cbc-471b-8944-c842a542a5af",
+      "name": "Post Update to Monday.com",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "YOUR_HEADER_AUTH_ID",
+          "name": "Header Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// This goes in a new Code node BEFORE the HTTP Request for adding update\n// Name it: \"Prepare Monday Update with Link\"\n\nconst reportData = $node[\"Format Report1\"].json;\nconst spreadsheetId = $node[\"Create Spread Sheet\"].json.spreadsheetId;\nconst sheetLink = `https://docs.google.com/spreadsheets/d/${spreadsheetId}/edit`;\n\n// Get the item ID from the previous Monday.com task creation\nconst mondayResponse = $node[\"HTTP Request\"].json;\nconst itemId = mondayResponse.data.create_item.id;\n\nconst tenantsWithBalance = reportData.summary.tenantsWithBalance;\nconst totalBalance = reportData.summary.totalBalance;\nconst priorityBreakdown = reportData.summary.priorityBreakdown || {};\n\n// Build priority text\nconst priorityText = Object.entries(priorityBreakdown).length > 0\n  ? Object.entries(priorityBreakdown)\n      .map(([priority, count]) => `${priority}: ${count} tenant(s)`)\n      .join(', ')\n  : 'No tenants with outstanding balances';\n\n// Create the update text with the Google Sheets link\nconst updateText = `ðŸ“Š Outstanding Balance Report Generated\n\n**Summary:**\nâ€¢ Total Outstanding: ${tenantsWithBalance} tenants owing $${totalBalance.toFixed(2)}\nâ€¢ Priority breakdown: ${priorityText}\n\n**ðŸ“‹ View Full Report:**\n${sheetLink}\n\nGenerated: ${new Date().toLocaleString('en-US', { timeZone: 'America/New_York' })}`;\n\n// Build the GraphQL mutation to add an update\nconst query = `mutation {\n  create_update (\n    item_id: ${itemId},\n    body: \"${updateText.replace(/\"/g, '\\\\\"').replace(/\\n/g, '\\\\n')}\"\n  ) {\n    id\n  }\n}`;\n\nreturn [{\n  json: {\n    query: query,\n    itemId: itemId,\n    sheetLink: sheetLink\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4128,
+        720
+      ],
+      "id": "2c97fe5f-96c9-45c0-a932-71ae53babd0c",
+      "name": "Prepare Monday Update with Link"
+    },
+    {
+      "parameters": {
+        "url": "https://api.buildium.com/v1/leases/outstandingbalances",
+        "authentication": "genericCredentialType",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-buildium-client-id",
+              "value": "YOUR_BUILDIUM_CLIENT_ID"
+            },
+            {
+              "name": "x-buildium-client-secret",
+              "value": "YOUR_BUILDIUM_CLIENT_SECRET"
+            },
+            {
+              "name": "Accept",
+              "value": "application/json"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2672,
+        400
+      ],
+      "id": "27d5a9e4-9a4e-40db-994b-38ff755febf2",
+      "name": "HTTP Request1"
+    },
+    {
+      "parameters": {
+        "url": "https://api.buildium.com/v1/leases/outstandingbalances",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-buildium-client-id",
+              "value": "YOUR_BUILDIUM_CLIENT_ID"
+            },
+            {
+              "name": "x-buildium-client-secret",
+              "value": "YOUR_BUILDIUM_CLIENT_SECRET"
+            },
+            {
+              "name": "Accept",
+              "value": "application/json"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1296,
+        1120
+      ],
+      "id": "9e335c2a-7bf6-417e-8b5e-ab10dd322585",
+      "name": "Outstanding_Balances_2",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "YOUR_HEADER_AUTH_ID",
+          "name": "Header Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "https://api.buildium.com/v1/leases/outstandingbalances",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-buildium-client-id",
+              "value": "YOUR_BUILDIUM_CLIENT_ID"
+            },
+            {
+              "name": "x-buildium-client-secret",
+              "value": "YOUR_BUILDIUM_CLIENT_SECRET"
+            },
+            {
+              "name": "Accept",
+              "value": "application/json"
+            }
+          ]
+        },
+        "options": {
+          "batching": {
+            "batch": {
+              "batchSize": 1
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1792,
+        1136
+      ],
+      "id": "6fc81b0c-6841-4923-b33d-4d11936062e5",
+      "name": "Outstanding_Balances",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "YOUR_HEADER_AUTH_ID",
+          "name": "Header Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\n\nconsole.log(`\\n=== DEBUGGING TENANT NAME EXTRACTION ===`);\nconsole.log(`Total items: ${items.length}\\n`);\n\nitems.forEach((item, index) => {\n  const data = item.json;\n  \n  // Check if CurrentTenants exists\n  const hasCurrentTenants = !!(data.CurrentTenants && data.CurrentTenants.length > 0);\n  \n  if (!hasCurrentTenants) {\n    console.log(`\\nâš ï¸  Item ${index + 1} - MISSING CurrentTenants:`);\n    console.log(`LeaseId: ${data.LeaseId || data.Id}`);\n    console.log(`Available fields:`, Object.keys(data));\n    console.log(`Full data sample:`, JSON.stringify(data, null, 2).substring(0, 500));\n  } else {\n    const tenant = data.CurrentTenants[0];\n    console.log(`\\nâœ“ Item ${index + 1} - Has tenant: ${tenant.FirstName} ${tenant.LastName}`);\n  }\n});\n\nconsole.log(`\\n=== END DEBUG ===\\n`);\n\n// Pass through all items unchanged\nreturn items;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2592,
+        1136
+      ],
+      "id": "e5a5c323-2b04-4d56-bae1-41cb42d8a184",
+      "name": "Before GroupBy tenant"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Telegram Trigger1": {
+      "main": [
+        [
+          {
+            "node": "Switch1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch1": {
+      "main": [
+        [
+          {
+            "node": "Get a file1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Text Message1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get a file1": {
+      "main": [
+        [
+          {
+            "node": "Transcribes Audio1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Transcribes Audio1": {
+      "main": [
+        [
+          {
+            "node": "Merge Input1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Text Message1": {
+      "main": [
+        [
+          {
+            "node": "Merge Input1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge Input1": {
+      "main": [
+        [
+          {
+            "node": "OpenAI Query Classifier",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Claude API - Interpret Query1": {
+      "main": [
+        [
+          {
+            "node": "Parse Claude Response1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Claude Response1": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter & Prepare Data1": {
+      "main": [
+        [
+          {
+            "node": "Split Out1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Out1": {
+      "main": [
+        [
+          {
+            "node": "Get Lease Details1",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Get Property Details1",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Outstanding_Balances",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Lease Details1": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Property Details1": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge All Data1": {
+      "main": [
+        [
+          {
+            "node": "Before GroupBy tenant",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Report1": {
+      "main": [
+        [
+          {
+            "node": "Prepare Monday.com Task Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Query Results1": {
+      "main": [
+        []
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge1": {
+      "main": [
+        [
+          {
+            "node": "Merge All Data1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Group by tenant": {
+      "main": [
+        [
+          {
+            "node": "Calculate Days Delinquent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Calculate Days Delinquent": {
+      "main": [
+        [
+          {
+            "node": "Sort By State",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format For google Sheet Node": {
+      "main": [
+        [
+          {
+            "node": "Aggregate for All Tenants Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sort By State": {
+      "main": [
+        [
+          {
+            "node": "Format For google Sheet Node",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Spreadsheet Name": {
+      "main": [
+        [
+          {
+            "node": "Create Spread Sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate for All Tenants Data": {
+      "main": [
+        [
+          {
+            "node": "Create Spreadsheet Name",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Rows for Insert": {
+      "main": [
+        [
+          {
+            "node": "Update Rows of Sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Rows of Sheet": {
+      "main": [
+        [
+          {
+            "node": "Move to Folder",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Move to Folder": {
+      "main": [
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Spread Sheet": {
+      "main": [
+        [
+          {
+            "node": "Share File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Monday.com Task Data": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Prepare Monday Update with Link",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "Send a text message",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send a text message1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Response": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate audio": {
+      "main": [
+        [
+          {
+            "node": "Send an audio file",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send an audio file": {
+      "main": [
+        []
+      ]
+    },
+    "OpenAI Query Classifier": {
+      "main": [
+        [
+          {
+            "node": "Parse OpenAI Classification",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch2": {
+      "main": [
+        [
+          {
+            "node": "Claude API - Interpret Query1",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Send Loading Message",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Handle General Query with OpenAI",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Detailed Response": {
+      "main": [
+        [
+          {
+            "node": "Extract Response Text",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Response Text": {
+      "main": [
+        [
+          {
+            "node": "Send General Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse OpenAI Classification": {
+      "main": [
+        [
+          {
+            "node": "Switch2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Handle General Query with OpenAI": {
+      "main": [
+        [
+          {
+            "node": "Generate Detailed Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send a text message": {
+      "main": [
+        []
+      ]
+    },
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Format Schedule Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Schedule Input": {
+      "main": [
+        [
+          {
+            "node": "Merge Input1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Share File": {
+      "main": [
+        [
+          {
+            "node": "Wait1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait": {
+      "main": [
+        [
+          {
+            "node": "Format Report1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait1": {
+      "main": [
+        [
+          {
+            "node": "Prepare Rows for Insert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Loading Message": {
+      "main": [
+        []
+      ]
+    },
+    "Post Update to Monday.com": {
+      "main": [
+        [
+          {
+            "node": "Prepare Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Monday Update with Link": {
+      "main": [
+        [
+          {
+            "node": "Post Update to Monday.com",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Replace Me": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [
+          {
+            "node": "Get Query Results1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request1": {
+      "main": [
+        [
+          {
+            "node": "Filter & Prepare Data1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Outstanding_Balances_2": {
+      "main": [
+        []
+      ]
+    },
+    "Outstanding_Balances": {
+      "main": [
+        [
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Before GroupBy tenant": {
+      "main": [
+        [
+          {
+            "node": "Group by tenant",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "67955380-d695-404e-93bc-bfc46396b341",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "ab9df17f21d9aeeafeb5176b5b2854a4d35ef679e88474322a49706912401cf8"
+  },
+  "id": "cz8Q81jJwCZoyMWk",
+  "tags": []
+}
