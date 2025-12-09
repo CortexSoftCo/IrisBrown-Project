@@ -1,6 +1,10 @@
 # Buildium Outstanding Balance Report Workflow (Iris)
 
-## 📋 Overview
+
+<img width="1745" height="721" alt="Buildium_Project" src="https://github.com/user-attachments/assets/7984cb05-6628-489d-8480-1b3e56ecf8f5" />
+
+
+##   Overview
 
 This is an automated n8n workflow that generates outstanding balance reports for property management using the Buildium API. The workflow integrates with Telegram for voice/text input, uses AI (Claude & OpenAI) for query classification and interpretation, and automatically generates formatted reports delivered via Telegram and Google Sheets, with task creation in Monday.com.
 
@@ -8,7 +12,7 @@ This is an automated n8n workflow that generates outstanding balance reports for
 
 ---
 
-## 🎯 Key Features
+##   Key Features
 
 ### 1. **Multi-Input Support**
 - **Telegram Voice Messages**: Record and send voice queries
@@ -43,7 +47,7 @@ This is an automated n8n workflow that generates outstanding balance reports for
 
 ---
 
-## 🏗️ Architecture
+##   Architecture
 
 ### Workflow Structure
 
@@ -110,7 +114,7 @@ This is an automated n8n workflow that generates outstanding balance reports for
 
 ---
 
-## 🔧 Configuration Requirements
+##   Configuration Requirements
 
 ### 1. **API Credentials**
 
@@ -192,7 +196,7 @@ Replace these placeholders in `workflow.json`:
 
 ---
 
-## 📦 Installation
+##  Installation
 
 ### Prerequisites
 - n8n instance (self-hosted or cloud)
@@ -230,7 +234,7 @@ Replace these placeholders in `workflow.json`:
 
 ---
 
-## 🚀 Usage
+##   Usage
 
 ### Via Telegram
 
@@ -260,18 +264,18 @@ Replace these placeholders in `workflow.json`:
 
 ---
 
-## 📊 Report Structure
+##  Report Structure
 
 ### Telegram Report Format
 
 ```
-📊 OUTSTANDING BALANCE REPORT
+ OUTSTANDING BALANCE REPORT
 Generated: [Date & Time]
 Last 6th: [Date]
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-📈 SUMMARY:
+ SUMMARY:
 • Total Tenants: [Number]
 • Tenants with Outstanding Balance: [Number]
 • Total Outstanding: $[Amount]
@@ -282,13 +286,13 @@ Last 6th: [Date]
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-🏛️ [STATE NAME] ([Count] tenant(s))
+ [STATE NAME] ([Count] tenant(s))
 ──────────────────────────────
 1. [Tenant Name]
-   📍 [Property Address]
-   💰 Balance: $[Amount]
-   ⏰ Days Delinquent: [Days]
-   🚨 Priority: [URGENT/HIGH/NORMAL]
+    [Property Address]
+    Balance: $[Amount]
+    Days Delinquent: [Days]
+    Priority: [URGENT/HIGH/NORMAL]
 
 [... more tenants ...]
 
@@ -316,7 +320,7 @@ End of Report ([X] page(s))
 
 ---
 
-## 🔍 Workflow Node Details
+## Workflow Node Details
 
 ### Key Nodes
 
@@ -384,7 +388,7 @@ End of Report ([X] page(s))
 
 ---
 
-## 🐛 Troubleshooting
+## Troubleshooting
 
 ### Common Issues
 
@@ -420,7 +424,7 @@ End of Report ([X] page(s))
 
 ---
 
-## 🔒 Security Considerations
+## Security Considerations
 
 1. **Credential Management**
    - Store all API keys in n8n credential store
@@ -444,7 +448,7 @@ End of Report ([X] page(s))
 
 ---
 
-## 📈 Performance Optimization
+## Performance Optimization
 
 ### Current Batch Processing
 - Buildium API calls: Batch size of 1 (sequential)
@@ -502,7 +506,7 @@ Edit the `Format Report` node to modify:
 
 ---
 
-## 📝 Maintenance
+## Maintenance
 
 ### Regular Tasks
 - **Weekly**: Monitor API usage and quotas
@@ -518,7 +522,7 @@ Edit the `Format Report` node to modify:
 
 ---
 
-## 🤝 Support & Contribution
+## Support & Contribution
 
 ### Getting Help
 - Check n8n community forums
@@ -535,13 +539,13 @@ Edit the `Format Report` node to modify:
 
 ---
 
-## 📄 License
+##  License
 
 This workflow is provided as-is for property management automation purposes. Ensure compliance with all API terms of service and data privacy regulations.
 
 ---
 
-## 🎨 Workflow Visual Overview
+##  Workflow Visual Overview
 
 The workflow uses color-coded sticky notes for organization:
 
@@ -555,7 +559,7 @@ The workflow uses color-coded sticky notes for organization:
 
 ---
 
-## ⚡ Quick Start Checklist
+##  Quick Start Checklist
 
 - [ ] Import `workflow.json` into n8n
 - [ ] Configure Telegram Bot credentials
@@ -574,8 +578,8 @@ The workflow uses color-coded sticky notes for organization:
 
 ---
 
-## 📞 Contact
+##  Contact
 
 For questions about this workflow, please refer to the n8n community or your organization's IT support team.
 
-**Happy Automating! 🚀**
+**Happy Automating! **
